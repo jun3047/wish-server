@@ -1,0 +1,143 @@
+service: wish-server
+frameworkVersion: '3'
+
+custom:
+  userTableName: 'users-table'
+  feedTableName: 'feeds-table'
+  cntTableName: 'cnts-table'
+  feedBucketName: 'wish-feeds-bucket'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-northeast-2
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - s3:PutObject
+            - s3:GetObject
+            - s3:DeleteObject
+          Resource:
+            - Fn::GetAtt: [ CntsTable, Arn ]
+            - Fn::GetAtt: [ UsersTable, Arn ]
+            - Fn::GetAtt: [ FeedsTable, Arn ]
+            - Fn::GetAtt: [ FeedsBucket, Arn ]
+
+  environment:
+    USER_TABLE: ${self:custom.userTableName}
+    CNT_TABLE: ${self:custom.cntTableName}
+    FEED_TABLE: ${self:custom.feedTableName}
+    FEED_BUCKET: ${self:custom.feedBucketName}
+    
+
+functions:
+  user:
+    handler: userHandler.userHandler
+    events:
+      - http:
+          path: user/{id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+      - http:
+          path: user
+          method: post
+          cors: true
+          
+  feed:
+    handler: feedHandler.feedHandler
+    events:
+      - http:
+          path: feed
+          method: post
+          cors: true
+      - http:
+          path: feeds
+          method: get
+          cors: true
+      - http:
+          path: feed/warn
+          method: put
+          cors: true
+
+  poll:
+    handler: pollHandler.pollHandler
+    events:
+      - http:
+          path: poll
+          method: put
+          cors: true
+
+  friend:
+    handler: friendHandler.friendHandler
+    events:
+      - http:
+          path: friend
+          method: post
+          cors: true
+      - http:
+          path: friend/recommend
+          method: post
+          cors: true
+      - http:
+          path: friend/request
+          method: put
+          cors: true
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.userTableName}
+
+    CntsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.cntTableName}
+
+    FeedsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.feedTableName}
+
+    FeedsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.feedBucketName}
+
+plugins:
+  - serverless-offline
+  - serverless-plugin-typescript
