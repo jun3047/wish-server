@@ -64,7 +64,7 @@ functions:
           cors: true
       - http:
           path: feeds
-          method: get
+          method: post
           cors: true
       - http:
           path: feed/warn

@@ -1,4 +1,3 @@
-import { FeedType } from "./type/feed";
 import { UserType } from "./type/user";
 
 const AWS = require('aws-sdk');
@@ -15,7 +14,14 @@ export const friendHandler = async (event) => {
         case 'PUT':
           return await requestFriend(event);
         default:
-          return { statusCode: 400, body: 'invalid request method' };
+          return { 
+            statusCode: 400, 
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+            },
+            body: 'invalid request method' };
     }
 };
 
@@ -34,19 +40,20 @@ const getRecommendedFriends = async(event) => {
 
     try {
 
-      console.log("phoneList:", phoneList);
-      console.log("school:", school);
-      console.log("schoolLocation:", schoolLocation);
-
       // case 1 friendIds가 없으면, 같은 학교 및 같은 번호
+
+      const expressionAttributeValues = {};
+      const phoneListPlaceholders = phoneList.map((phone, index) => {
+        const placeholder = `:phone${index}`;
+        expressionAttributeValues[placeholder] = phone;
+        return placeholder;
+      });
 
       const scanParams = school === undefined ? {
           TableName: 'users-table',
-          FilterExpression: "phone IN (:phoneList)",
-          ExpressionAttributeValues: {
-              ":phoneList": phoneList,
-          }
-      }: {
+          FilterExpression: `phone IN (${phoneListPlaceholders.join(', ')})`,
+          ExpressionAttributeValues: expressionAttributeValues
+          }: {
           TableName: 'users-table',
           FilterExpression: "school = :school AND schoolLocation = :schoolLocation",
           ExpressionAttributeValues: {
@@ -59,9 +66,16 @@ const getRecommendedFriends = async(event) => {
       
       const recommendedFriends: UserType[] = scanResult.Items;
 
-      return { statusCode: 200, body: JSON.stringify(recommendedFriends) };
+      return { 
+        statusCode: 200, 
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+        },
+        body: JSON.stringify(recommendedFriends) };
 
-      // case 2 friendIds가 있으면, 같은 학교 및 같은 번호, 친구의 친구
+      // case 2 friendIds가 있으면, 유저의 친구 리스트를 가져오기
       // {
       //   id: number;
       //   name: string;
@@ -76,8 +90,15 @@ const getRecommendedFriends = async(event) => {
       // 친구면 제외하는 로직
 
     } catch (error) {
-      console.log("error:", error);
-        return { statusCode: 500, body: error.message };
+      console.log("error:", error.message);
+        return { 
+          statusCode: 500,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+          },
+          body: error.message };
     }
 }
 
@@ -85,7 +106,7 @@ const beFriend = async(event) => {
 
     const {
       id,
-      targetId
+      targetId,
     }: {
       id: number;
       targetId: number;
@@ -116,12 +137,27 @@ const beFriend = async(event) => {
       await dynamoDB.update(updateParams).promise();
       await dynamoDB.update(targetUpdateParams).promise();
 
-      return { statusCode: 200, body: JSON.stringify({success: true}) };
+      return {
+        statusCode: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+        },
+        body: JSON.stringify({success: true})
+      };
       
     } catch (error) {
       console.log("error:", error);
   
-      return { statusCode: 500, body: 'Error: Could not register user' };
+      return { 
+        statusCode: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+        },
+        body: 'Error: Could not register user' };
     }
 }
 
@@ -150,6 +186,14 @@ const requestFriend = async (event) => {
     try {
 
         //  targetToken에 push 보내고
+        const pushData = {
+          id: id,
+          name: name,
+          age: age,
+          school: school,
+          schoolLocation: schoolLocation,
+          friendIds: friendIds,
+        }
 
         // targetId의 requestFriendIds에 추가
         const targetUpdateParams = {
@@ -163,11 +207,27 @@ const requestFriend = async (event) => {
         };
         
         await dynamoDB.update(targetUpdateParams).promise();  
+
+        console.log("targetToken:", targetToken);
             
-        return { statusCode: 200, body: JSON.stringify({
+        return { 
+          statusCode: 200, 
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+          },
+          body: JSON.stringify({
             success: true
         }) };
     } catch (error) {
-        return { statusCode: 500, body: error.message };
+        return { 
+          statusCode: 500,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+          },
+          body: error.message };
     }
 }

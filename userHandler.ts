@@ -11,7 +11,14 @@ export const userHandler = async (event) => {
         case 'GET':
           return await userInfo(event);
         default:
-          return { statusCode: 400, body: 'invalid request method' };
+          return { 
+            statusCode: 400, 
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+            },
+            body: 'invalid request method' };
     }
 };
 
@@ -58,6 +65,7 @@ const register = async(event) => {
           friendIds: [],
       }
       
+      
       const params = {
         TableName: 'users-table',
         Item: userData,
@@ -70,11 +78,23 @@ const register = async(event) => {
   
       return { 
         statusCode: 200, 
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+        },
         body: JSON.stringify({id: userId}) };
     } catch (error) {
       console.log("error:", error);
   
-      return { statusCode: 500, body: 'Error: Could not register user' };
+      return { 
+        statusCode: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+        },
+        body: 'Error: Could not register user' };
     }
 }  
 
@@ -91,8 +111,22 @@ const userInfo = async (event) => {
         
         const user = await dynamoDB.get(params).promise();
         
-        return { statusCode: 200, body: JSON.stringify(user.Item) };
+        return { 
+          statusCode: 200,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+          },
+          body: JSON.stringify(user.Item) };
     } catch (error) {
-        return { statusCode: 500, body: error.message };
+        return { 
+          statusCode: 500,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+          },
+          body: error.message };
     }
 }

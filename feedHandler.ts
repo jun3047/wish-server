@@ -1,20 +1,28 @@
 import { FeedType } from "./type/feed";
-import env from './env.json';
+import { FeedUserType, UserType } from "./type/user";
 
 const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 export const feedHandler = async (event) => {
 
+    if(event.path === '/feeds')
+      return await getRecommendedFeeds(event);
+
     switch (event.httpMethod) {
-        case 'GET':
-          return await getRecommendedFeeds(event);
         case 'POST':
           return await postFeed(event);
         case 'PUT':
           return await warnFeed(event);
         default:
-          return { statusCode: 400, body: 'invalid request method' };
+          return { 
+            statusCode: 400,
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+            },
+            body: 'invalid request method' };
     }
 };
 
@@ -54,58 +62,91 @@ const warnFeed = async(event) => {
     
         await dynamoDB.update(updateParams).promise();
     
-        return { statusCode: 200, body: JSON.stringify({success: true}) };
+        return { 
+          statusCode: 200, 
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+          },
+          body: JSON.stringify({success: true}) };
 
     } catch (error) {
-        return { statusCode: 500, body: error.message };
+        return { 
+          statusCode: 500, 
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+          },
+          body: error.message };
     }
 }
 
 const getRecommendedFeeds = async(event) => {
 
     const body: {
-      phone: string;
-      school?: string;
-      schoolLocation?: string;
-      friendIds: number[];  
+      friendOfFriendIds: number[];
+      friendIds: number[];
+      warnUserIds: number[];
     } = JSON.parse(event.body);
-      
-    try {
-  
 
-      // body = phone school friednIds 고려해서 추천 피드 보내주기
+    const { friendOfFriendIds, friendIds, warnUserIds } = body;
 
-      const params = {
-        TableName: 'feeds-table',
-        Key: { id: 1 }
-      }
-  
-      const data = await dynamoDB.get(params).promise();
+    console.log("body", friendOfFriendIds, friendIds, warnUserIds)
 
-      const feeds = {
-        ...data.Item
-      }
 
-      return { 
-        statusCode: 200, 
-        body: JSON.stringify({feeds: feeds}) };
-    } catch (error) {
-      console.log("error:", error);
-  
-      return { statusCode: 500, body: 'Error: Could not register user' };
+    const expressionAttributeValues = {};
+    const idListPlaceholders = 
+      [...friendOfFriendIds, ...friendIds]
+      .filter((id)=>!warnUserIds.includes(id))
+      .map((id, index) => {
+
+        const placeholder = `:id${index}`;
+        expressionAttributeValues[placeholder] = id;
+        return placeholder;
+    });
+
+    const scanParams = {
+      TableName: 'feeds-table',
+      FilterExpression: `writer.id IN (${idListPlaceholders.join(', ')})`,
+      ExpressionAttributeValues: expressionAttributeValues,
+      Limit: 40
     }
-}
+
+    try {
+      const scanResult = await dynamoDB.scan(scanParams).promise();
+      let recommendedFriends = scanResult.Items || [];
+
+      const data: FeedType[] = recommendedFriends.map((feed:FeedType) => ({
+        id: feed.id,
+        question: feed.question,
+        imgUrl: feed.imgUrl,
+        warnUserIds: feed.warnUserIds,
+        writer: feed.writer,
+        asker: feed.asker,
+        time: feed.time,
+      }))
+
+      return {
+        statusCode: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+        },
+        body: JSON.stringify(data)
+      };
+    } catch (error) {
+      console.error("Error fetching recommended feeds:", error);
+      throw error; // 오류를 호출자에게 전파
+    }
+  }
+  
 
 const postFeed = async (event) => {
 
-    const body : {
-      token: string;
-      question: string;
-      writerId: number;
-      writerName: string;
-      askerId: number;
-      askerName: string;
-    } = JSON.parse(event.body);
+    const body = JSON.parse(event.body);
   
     try {
 
@@ -118,8 +159,8 @@ const postFeed = async (event) => {
       const feedId = data.Item.feedCnt + 1
 
       const awsConfig = {
-        accessKeyId: env['ACCESS_KEY_ID'],
-        secretAccessKey: env['SECRET_ACCESS_KEY'],
+        accessKeyId: process.env.ACCESS_KEY_ID,
+        secretAccessKey: process.env.SECRET_ACCESS_KEY,
         region: 'ap-northeast-2'
       };
       
@@ -128,11 +169,11 @@ const postFeed = async (event) => {
       const fileName = feedId + '.jpg';
 
       const s3Params = {
-        Bucket: env['BUCKET_NAME'],
+        Bucket: process.env.BUCKET_NAME,
         Key: fileName,
         Expires: 60,
         ContentType: 'image/jpeg',  
-        ACL: 'public-read'
+        // ACL: 'public-read'
       };
 
       const preSignedURL = s3.getSignedUrl('putObject', s3Params);
@@ -146,9 +187,9 @@ const postFeed = async (event) => {
         }
       };
 
-      const feedData: FeedType = {
+      const feedData = {
           ...body,
-          imgUrl: preSignedURL,
+          imgUrl: preSignedURL.split('?')[0],
           id: feedId,
           warnUserIds: [],
           time: new Date().toISOString()
@@ -158,16 +199,36 @@ const postFeed = async (event) => {
           TableName: 'feeds-table',
           Item: feedData,
         }
-                
+
         await dynamoDB.update(updateParams).promise();
         await dynamoDB.put(params).promise();
-            
-        return { statusCode: 200, body: JSON.stringify(
-          {
-            id: feedId,
-            imgUrl: preSignedURL
+        
+
+        // 아래 userUpdateParams를 수정해서 작성자의 feedIds에 feedId를 추가해야 함
+
+        const userUpdateParams = {
+          TableName: 'users-table',
+          Key: { id: body.writer.id},
+          UpdateExpression: "SET feedIds = list_append(feedIds, :feedId)",
+          ExpressionAttributeValues: {
+            ":feedId": [feedId],
           }
-        ) };
+        };
+
+        await dynamoDB.update(userUpdateParams).promise();        
+            
+        return { 
+          statusCode: 200, 
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+          },
+          body: JSON.stringify(
+            {
+              id: feedId,
+              imgUrl: preSignedURL
+            })};
       } catch (error) {
           return { statusCode: 500, body: error.message };
       }
