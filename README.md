@@ -52,19 +52,14 @@ export interface FeedType {
 }
 ```
 
-**feed**
+**alarm**
 
 ```ts
 import { SimpleUserType } from "./user";
 
-export interface FeedType {
+export type AlarmType = {
     id: number;
     question: string;
-    imgUrl: string;
-    time: string;
-    warnUserIds: number[];
-    
-    writer: SimpleUserType;
     asker: SimpleUserType;
 }
 ```
