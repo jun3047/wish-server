@@ -1,34 +1,25 @@
-export interface IRequestFriendInfo {
-    token: string;
-    gender: "boy" | "girl";
-    id: number;
-    name: string;
-    age: number;
-    school: string;
-    schoolLocation: string;
-    friendIds: number[];
-}
-
 export interface UserType {
     id: number;
     token: string;
     name: string;
     age: number;
     phone: string;
-    gender: "boy" | "girl";
-    friendIds: number[];
-    feedIds: number[];
+    gender: "남자" | "여자";
+    feedIds: number[] | null;
     school?: string;
     schoolLocation?: string;
-    // requestFriendInfos: ServerUserType[]; (client)
-    // addFriendIds: number[]; (client)
+    friends: SimpleUserType[] | null;
 }
 
-export interface FeedUserType {
+//다른 객체의 하위로 들어갈 때 사용
+export interface SimpleUserType {
     id: number;
-    name: string;
     token: string;
+    name: string;
     age: number;
+    phone: string;
+    gender: "남자" | "여자";
+    feedIds: number[] | null;
     school?: string;
     schoolLocation?: string;
 }
