@@ -232,8 +232,8 @@ res
 req
 
 interface req {
-    userId: number
-    feedId: number
+    user: SimpleUserType
+    targetUser: SimpleUserType
 }
 
 
@@ -261,7 +261,7 @@ res
 //SimpleUserType[]
 
 interface res {
-     id: number;
+    id: number;
     token: string;
     name: string;
     age: number;
