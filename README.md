@@ -83,7 +83,8 @@ export interface AlarmType {
 
 **feed**  
 - 피드 작성하기: ```POST/feed```  
-- 피드 가져오기: ```POST/feeds```  
+- 추천 피드 가져오기: ```POST/feed/recommend```
+- feedIds에 해당하는 피드 가져오기: ```GET/feed/:feedIds```  
 - 글 신고하기: ```PUT/feed/warn```
 
 **poll**  
