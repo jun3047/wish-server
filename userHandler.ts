@@ -9,7 +9,7 @@ export const userHandler = async (event) => {
         case 'POST':
           return await register(event);
         case 'GET':
-          return await userInfo(event);
+          return await getUser(event);
         default:
           return { 
             statusCode: 400, 
@@ -22,20 +22,11 @@ export const userHandler = async (event) => {
     }
 };
 
-
 const register = async(event) => {
 
-    const body: {
-        token: string;
-        name: string;
-        age: number;
-        phone: string;
-        gender: "boy" | "girl";
-        school?: string;
-        schoolLocation?: string;
-        requestFriendIds?: number[];
-    } = JSON.parse(event.body);
-
+    type RegisterBody = Omit<UserType, 'id'| 'feedIds'| 'friends'>
+    const body: RegisterBody = JSON.parse(event.body);
+  
     try {
       
       const countsParams = {
@@ -56,23 +47,17 @@ const register = async(event) => {
       };
 
       const userData: UserType = {
-          school: undefined,
-          schoolLocation: undefined,
-          requestFriendIds: [],
           ...body,
           id: userId,
           feedIds: [],
-          friendIds: [],
+          friends: [],
       }
-      
       
       const params = {
         TableName: 'users-table',
         Item: userData,
       }
 
-      // 친구 요청하고 push 보내는 것까지 하기
-    
       await dynamoDB.update(updateParams).promise();
       await dynamoDB.put(params).promise();
   
@@ -98,7 +83,7 @@ const register = async(event) => {
     }
 }  
 
-const userInfo = async (event) => {
+const getUser = async (event) => {
 
     try {
         const {id} = event.pathParameters;
@@ -109,7 +94,8 @@ const userInfo = async (event) => {
             }
         };
         
-        const user = await dynamoDB.get(params).promise();
+        const res = await dynamoDB.get(params).promise();
+        const user: UserType = res.Item
         
         return { 
           statusCode: 200,
@@ -118,7 +104,7 @@ const userInfo = async (event) => {
             "Access-Control-Allow-Headers": "Content-Type",
             "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
           },
-          body: JSON.stringify(user.Item) };
+          body: JSON.stringify(user)};
     } catch (error) {
         return { 
           statusCode: 500,

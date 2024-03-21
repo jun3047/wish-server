@@ -7,6 +7,8 @@ custom:
   cntTableName: 'cnts-table'
   feedBucketName: 'wish-feeds-bucket'
 
+useDotenv: true
+
 provider:
   name: aws
   runtime: nodejs18.x
@@ -36,7 +38,7 @@ provider:
     CNT_TABLE: ${self:custom.cntTableName}
     FEED_TABLE: ${self:custom.feedTableName}
     FEED_BUCKET: ${self:custom.feedBucketName}
-    
+  
 
 functions:
   user:
@@ -63,19 +65,15 @@ functions:
           method: post
           cors: true
       - http:
-          path: feeds
+          path: feed/recommend
           method: post
           cors: true
       - http:
-          path: feed/warn
-          method: put
+          path: feed/{feedIds}
+          method: get
           cors: true
-
-  poll:
-    handler: pollHandler.pollHandler
-    events:
       - http:
-          path: poll
+          path: feed/warn
           method: put
           cors: true
 
@@ -89,10 +87,6 @@ functions:
       - http:
           path: friend/recommend
           method: post
-          cors: true
-      - http:
-          path: friend/request
-          method: put
           cors: true
 
 resources:
@@ -141,3 +135,4 @@ resources:
 plugins:
   - serverless-offline
   - serverless-plugin-typescript
+  - serverless-dotenv-plugin
