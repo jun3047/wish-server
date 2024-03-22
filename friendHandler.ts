@@ -30,25 +30,41 @@ const getRecommendedFriends = async(event) => {
       schoolLocation,
       friendIds,
     }: {
-      phoneList: string[];
+      phoneList?: string[];
       school?: string;
       schoolLocation?: string;
       friendIds?: number[];
     } = JSON.parse(event.body);
 
+    let filterExpression;
     const expressionAttributeValues = {};
-    const phoneListPlaceholders = phoneList.map((phone, index) => {
-      const placeholder = `:phone${index}`;
-      expressionAttributeValues[placeholder] = phone;
-      return placeholder;
-    });
-  
-    let filterExpression = `phone IN (${phoneListPlaceholders.join(', ')})`;
+
+    if (phoneList?.length) {
+      const phoneListPlaceholders = phoneList.map((phone, index) => {
+        const placeholder = `:phone${index}`;
+        expressionAttributeValues[placeholder] = phone;
+        return placeholder;
+      });
+    
+      filterExpression = `phone IN (${phoneListPlaceholders.join(', ')})`;
+    }
   
     if (school !== undefined) {
       expressionAttributeValues[":school"] = school;
       expressionAttributeValues[":schoolLocation"] = schoolLocation;
-      filterExpression += ` OR (school = :school AND schoolLocation = :schoolLocation)`;
+
+      if (filterExpression === undefined) filterExpression = `(school = :school AND schoolLocation = :schoolLocation)`;
+      else filterExpression += ` OR (school = :school AND schoolLocation = :schoolLocation)`;
+    }
+
+    if (filterExpression === undefined) return {
+      statusCode: 201,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+      },
+      body: []
     }
   
     const scanParams = {
@@ -97,6 +113,10 @@ const beFriend = async(event) => {
       user: SimpleUserType;
       targetUser: SimpleUserType;
     } = JSON.parse(event.body);
+
+    console.log(
+      
+    )
       
     try {
   
