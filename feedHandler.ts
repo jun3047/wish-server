@@ -244,7 +244,7 @@ const getFeeds = async (event) => {
   try {
     const { feedIds } = event.pathParameters;
 
-    const keys = JSON.parse(feedIds).map((id: number) => ({ id }));
+    const keys = feedIds.split(',').map((id: string) => ({ id: parseInt(id) }));
 
     const params = {
       RequestItems: {

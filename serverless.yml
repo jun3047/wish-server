@@ -72,6 +72,10 @@ functions:
           path: feed/{feedIds}
           method: get
           cors: true
+          request:
+            parameters:
+              paths:
+                feedIds: true
       - http:
           path: feed/warn
           method: put
