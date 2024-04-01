@@ -8,14 +8,15 @@ export const feedHandler = async (event) => {
 
   if (event.path === '/feed/recommend')
     return await getRecommendedFeeds(event);
+  
+  if (event.path === '/feeds')
+    return await getFeeds(event);
 
   switch (event.httpMethod) {
     case 'POST':
       return await postFeed(event);
     case 'PUT':
       return await warnFeed(event);
-    case 'GET':
-      return await getFeeds(event);
     default:
       return {
         statusCode: 400,
@@ -242,9 +243,9 @@ const postFeed = async (event) => {
 const getFeeds = async (event) => {
 
   try {
-    const { feedIds } = event.pathParameters;
+    const feedIds = JSON.parse(event.body);
 
-    const keys = feedIds.split(',').map((id: string) => ({ id: parseInt(id) }));
+    const keys = feedIds.map((id: string) => ({ id: parseInt(id) }));
 
     const params = {
       RequestItems: {

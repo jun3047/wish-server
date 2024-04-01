@@ -24,6 +24,7 @@ provider:
             - dynamodb:PutItem
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
             - s3:PutObject
             - s3:GetObject
             - s3:DeleteObject
@@ -69,13 +70,9 @@ functions:
           method: post
           cors: true
       - http:
-          path: feed/{feedIds}
-          method: get
+          path: feeds
+          method: post
           cors: true
-          request:
-            parameters:
-              paths:
-                feedIds: true
       - http:
           path: feed/warn
           method: put
