@@ -102,13 +102,26 @@ const getRecommendedFeeds = async (event) => {
 
   const friendIds: number[] = friends.flatMap(friend => friend.id);
 
+  console.log("friendIds:", friendIds)
+
   try{
 
     const uniqueFriendIds = Array.from(new Set(friendIds));
     const friendFeedIds = await getFriendFeedIds(uniqueFriendIds)
-    if(friendFeedIds.length === 0) return []
+
+    console.log("friendFeedIds:", friendFeedIds)
+    if(friendFeedIds.length === 0) return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+      },
+      body: JSON.stringify([])
+    };
   
     const recommendedFeeds = await getFeedsByIds(friendFeedIds)
+    console.log("recommendedFeeds:", recommendedFeeds)
 
     return {
       statusCode: 200,
