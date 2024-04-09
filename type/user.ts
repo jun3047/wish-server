@@ -18,7 +18,7 @@ export interface SimpleUserType {
     age: number;
     phone: string;
     gender: "남자" | "여자";
-    feedIds: number[] | null;
+    feedIds: number[];
     school?: string;
     schoolLocation?: string;
 }

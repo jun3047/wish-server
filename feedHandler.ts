@@ -97,42 +97,20 @@ const getRecommendedFeeds = async (event) => {
 
   const { school, schoolLocation, friends } = body;
 
-  const friendFeedIds = friends.flatMap(friend => friend.feedIds);
-  let recommendedFeeds: FeedType[] = [];
+  // TODO: 친구가 아니더라도 학교가 같은 사람들의 피드도 추천해줘야 함
+  // NOW: 현재는 친구들의 피드만 추천해주고 있음
 
-  if (friendFeedIds.length > 0) {
-    const batchGetParams = {
-      RequestItems: {
-        'feeds-table': {
-          Keys: friendFeedIds.map(id => ({ id }))
-        }
-      }
-    };
+  const friendIds: number[] = friends.flatMap(friend => friend.id);
 
-    try {
-      const batchGetResult = await dynamoDB.batchGet(batchGetParams).promise();
-      recommendedFeeds = batchGetResult.Responses['feeds-table'];
-    } catch (error) {
-      console.error('Error fetching feeds by feedIds:', error);
-      return {
-        statusCode: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type",
-          "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
-        },
-        body: error.message
-        };
-      }
-    }
+  console.log('friendIds:', friendIds);
 
-  if (school) {
-    const schoolSpecificFeeds = recommendedFeeds.filter(feed =>
-      feed.writer.school === school && feed.writer.schoolLocation === schoolLocation
-    );
-
-    recommendedFeeds = [...schoolSpecificFeeds];
-  }
+  try{
+    const friendFeedIds = await getFriendFeedIds(friendIds)
+    console.log('friendFeedIds:', friendFeedIds);
+    if(!friendFeedIds) return { statusCode: 500, body: 'Error fetching friendFeedIds' }
+  
+    const recommendedFeeds = await getFeedsByIds(friendFeedIds)
+    console.log('recommendedFeeds:', recommendedFeeds);
 
     return {
       statusCode: 200,
@@ -143,6 +121,36 @@ const getRecommendedFeeds = async (event) => {
       },
       body: JSON.stringify(recommendedFeeds)
     };
+    
+  } catch (error) {
+    console.error('Error fetching friends by friendIds:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
+      },
+      body: error.message
+    };
+  }
+}
+
+const getFriendFeedIds = async (friendIds: number[]) => {
+  const batchGetParams = {
+    RequestItems: {
+      'users-table': {
+        Keys: friendIds.map(id => ({ id }))
+      }
+    }
+  };
+
+  const batchGetResult = await dynamoDB.batchGet(batchGetParams).promise();
+  const friendsData = batchGetResult.Responses['users-table'];
+
+  const friendFeedIds = friendsData.flatMap(friend => friend.feedIds);
+
+  return friendFeedIds;
 }
 
 
@@ -239,26 +247,29 @@ const postFeed = async (event) => {
   }
 }
 
+const getFeedsByIds = async (feedIds: number[]) => {
+
+  const params = {
+    RequestItems: {
+      'feeds-table': {
+        Keys: feedIds.map(id => ({ id }))
+      }
+    }
+  };
+
+  const res = await dynamoDB.batchGet(params).promise();
+
+  const feeds: FeedType[] = res.Responses['feeds-table'];
+
+  return feeds;
+}
 
 const getFeeds = async (event) => {
 
   try {
     const feedIds = JSON.parse(event.body);
-
-    const keys = feedIds.map((id: string) => ({ id: parseInt(id) }));
-
-    const params = {
-      RequestItems: {
-        'feeds-table': {
-          Keys: keys
-        }
-      }
-    };
-
-    const res = await dynamoDB.batchGet(params).promise();
-
-    const feeds: FeedType[] = res.Responses['feeds-table'];
-
+    const feedIds_num = feedIds.map((id: string) => ({ id: parseInt(id) }));
+    const feeds = await getFeedsByIds(feedIds_num);
 
     return {
       statusCode: 200,
