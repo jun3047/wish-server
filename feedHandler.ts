@@ -248,7 +248,7 @@ const getFeedsByIds = async (feedIds: number[]) => {
   const params = {
     RequestItems: {
       'feeds-table': {
-        Keys: feedIds
+        Keys: feedIds.map(id => ({ id }))
       }
     }
   };
