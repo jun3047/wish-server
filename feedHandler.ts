@@ -282,6 +282,9 @@ const getFeeds = async (event) => {
       body: JSON.stringify(feeds)
     };
   } catch (error) {
+
+    console.error('Error fetching feeds by feedIds:', error);
+
     return {
       statusCode: 500,
       headers: {
