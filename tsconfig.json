@@ -4,12 +4,13 @@
     "strictNullChecks": true,
     "sourceMap": true,
     "allowJs": true,
-    "target": "es5",
+    "target": "es2015",
     "outDir": ".build",
     "moduleResolution": "node",
     "lib": ["es2015"],
     "rootDir": "./",
     "resolveJsonModule": true,
     "esModuleInterop": true,
+    "module": "CommonJS",
   }
 }
