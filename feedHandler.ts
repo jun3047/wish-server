@@ -104,7 +104,7 @@ const getRecommendedFeeds = async (event) => {
 
   try{
     const friendFeedIds = await getFriendFeedIds(friendIds)
-    if(!friendFeedIds) return { statusCode: 500, body: 'Error fetching friendFeedIds' }
+    if(friendFeedIds.length === 0) return []
   
     const recommendedFeeds = await getFeedsByIds(friendFeedIds)
 
@@ -263,8 +263,11 @@ const getFeedsByIds = async (feedIds: number[]) => {
 const getFeeds = async (event) => {
 
   try {
-    const feedIds = JSON.parse(event.body);
+    const feedIds: string[] = JSON.parse(event.body);
+    if(feedIds.length === 0) return []
+    
     const feedIds_num = feedIds.map((id: string) => parseInt(id));
+
     const feeds = await getFeedsByIds(feedIds_num);
 
     return {
