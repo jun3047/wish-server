@@ -102,15 +102,11 @@ const getRecommendedFeeds = async (event) => {
 
   const friendIds: number[] = friends.flatMap(friend => friend.id);
 
-  console.log('friendIds:', friendIds);
-
   try{
     const friendFeedIds = await getFriendFeedIds(friendIds)
-    console.log('friendFeedIds:', friendFeedIds);
     if(!friendFeedIds) return { statusCode: 500, body: 'Error fetching friendFeedIds' }
   
-    const recommendedFeeds = getFeedsByIds(friendFeedIds)
-    console.log('recommendedFeeds:', recommendedFeeds);
+    const recommendedFeeds = await getFeedsByIds(friendFeedIds)
 
     return {
       statusCode: 200,
