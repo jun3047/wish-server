@@ -114,10 +114,7 @@ const beFriend = async(event) => {
       targetUser: SimpleUserType;
     } = JSON.parse(event.body);
 
-    console.log(
-      
-    )
-      
+    
     try {
   
       const updateParams = {
