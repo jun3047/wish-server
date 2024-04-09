@@ -103,7 +103,9 @@ const getRecommendedFeeds = async (event) => {
   const friendIds: number[] = friends.flatMap(friend => friend.id);
 
   try{
-    const friendFeedIds = await getFriendFeedIds(friendIds)
+
+    const uniqueFriendIds = Array.from(new Set(friendIds));
+    const friendFeedIds = await getFriendFeedIds(uniqueFriendIds)
     if(friendFeedIds.length === 0) return []
   
     const recommendedFeeds = await getFeedsByIds(friendFeedIds)
