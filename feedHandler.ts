@@ -90,27 +90,34 @@ const warnFeed = async (event) => {
 
 const getRecommendedFeeds = async (event) => {
   const body: {
-    school?: string;
-    schoolLocation?: string;
-    friends: SimpleUserType[];
-  } = JSON.parse(event.body);
+    userInfo: {
+      school?: string;
+      schoolLocation?: string;
+      friends: SimpleUserType[];
+  },
+  lastFeedId?: number
+} = JSON.parse(event.body);
 
-  const { school, schoolLocation, friends } = body;
+const MAX_FEEDS = 10
+
+  const { userInfo, lastFeedId } = body;
+  const { school, schoolLocation, friends } = userInfo;
+
+  console.log("lastFeedId:", lastFeedId)
 
   // TODO: 친구가 아니더라도 학교가 같은 사람들의 피드도 추천해줘야 함
   // NOW: 현재는 친구들의 피드만 추천해주고 있음
 
   const friendIds: number[] = friends.flatMap(friend => friend.id);
 
-  console.log("friendIds:", friendIds)
-
   try{
 
+    
     const uniqueFriendIds = Array.from(new Set(friendIds));
     const friendFeedIds = await getFriendFeedIds(uniqueFriendIds)
+    const uniqueFeedIds = Array.from(new Set(friendFeedIds)) as number[]
 
-    console.log("friendFeedIds:", friendFeedIds)
-    if(friendFeedIds.length === 0) return {
+    if(uniqueFeedIds.length === 0) return {
       statusCode: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
@@ -119,9 +126,12 @@ const getRecommendedFeeds = async (event) => {
       },
       body: JSON.stringify([])
     };
-  
-    const recommendedFeeds = await getFeedsByIds(friendFeedIds)
-    console.log("recommendedFeeds:", recommendedFeeds)
+    
+    const nowPageIds = lastFeedId ? 
+    uniqueFeedIds.filter(id => id < lastFeedId).slice(-MAX_FEEDS):
+    uniqueFeedIds.slice(-MAX_FEEDS)
+
+    const recommendedFeeds = await getFeedsByIds(nowPageIds)
 
     return {
       statusCode: 200,
@@ -271,6 +281,8 @@ const getFeedsByIds = async (feedIds: number[]) => {
   const res = await dynamoDB.batchGet(params).promise();
 
   const feeds: FeedType[] = res.Responses['feeds-table'];
+
+  feeds.sort((a, b) => b.id - a.id)
 
   return feeds;
 }
