@@ -1,80 +1,8 @@
+## WISH 가져오기
 
-## TYPE
+### API 호스트
+👉🏻 https://tio23s18pj.execute-api.ap-northeast-2.amazonaws.com/dev
 
-**user**
-
-```ts
-interface UserType {
-    id: number;
-    token: string;
-    name: string;
-    age: number;
-    phone: string;
-    gender: "남자" | "여자";
-    feedIds: number[];
-    school?: string;
-    schoolLocation?: string;
-    friends: SimpleUserType[];
-
-    requestFriends: SimpleUserType[]; //local only
-    receivedFriends: SimpleUserType[]; //local only
-    alarms: AlarmType[] //local only
-}
-
-//다른 객체의 하위로 들어갈 때 사용
-interface SimpleUserType {
-    id: number;
-    token: string;
-    name: string;
-    age: number;
-    phone: string;
-    gender: "남자" | "여자";
-    feedIds: number[];
-    school?: string;
-    schoolLocation?: string;
-}
-```
-
-**feed**
-
-```ts
-import { SimpleUserType } from "./user";
-
-export interface FeedType {
-    id: number;
-    question: string;
-    imgUrl: string;
-    time: string;
-    warnUserIds: number[];
-    
-    writer: SimpleUserType;
-    asker: SimpleUserType;
-}
-```
-
-**alarm**
-
-```ts
-import { SimpleUserType } from "./user";
-
-export type AlarmType = {
-    id: number;
-    question: string;
-    asker: SimpleUserType;
-}
-```
-
-**poll**
-
-```ts
-export interface PollType {
-    id: number;
-    question: string;
-    nextTime: string
-}
-```
-
-  
 ## API 요약
 
 **user**  
@@ -162,9 +90,12 @@ interface res {
 req
 
 interface req {
-    school?: string;
-    schoolLocation?: string;
-    friends: SimpleUserType[];
+    userInfo: {
+      school?: string;
+      schoolLocation?: string;
+      friends: SimpleUserType[];
+  },
+  lastFeedId?: number
 }
 
 res
@@ -275,5 +206,52 @@ interface res {
 ```
 </details>
 
+
+## TYPE
+
+**user**
+
+```ts
+export interface UserType {
+    id: number;
+    token: string;
+    name: string;
+    age: number;
+    phone: string;
+    gender: "남자" | "여자";
+    feedIds: number[] | [];
+    school?: string;
+    schoolLocation?: string;
+    friends: SimpleUserType[] | [];
+}
+
+export interface SimpleUserType {
+    id: number;
+    token: string;
+    name: string;
+    age: number;
+    phone: string;
+    gender: "남자" | "여자";
+    feedIds: number[];
+    school?: string;
+    schoolLocation?: string;
+} //특정 객체의 하위로 들어갈 때, 사용하는 유저 정보
+```
+
+**feed**
+
+```ts
+import { UserType } from "./user";
+
+export interface FeedType {
+    id: number;
+    question: string;
+    imgUrl: string;
+    warnUserIds: number[] | [];
+    writer: UserType;
+    asker: UserType;
+    time: string;
+}
+```
 
 
