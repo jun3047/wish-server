@@ -1,7 +1,18 @@
-## WISH 가져오기
+## WISH SERVER
 
 ### API 호스트
 👉🏻 https://tio23s18pj.execute-api.ap-northeast-2.amazonaws.com/dev
+
+## 🧑🏻‍💻 기술스택
+- `node`, `typescript`
+- `lambda`, `dynamoDB`, `s3`
+- `cloudFormation`
+<br /><br />
+
+
+## 📝 서비스 구조도
+![구조도](https://github.com/jun3047/wish-app/assets/25457470/8ba2a8d7-3483-44e5-b410-e7656a798bc7)
+
 
 ## API 요약
 
